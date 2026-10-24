@@ -1,0 +1,12 @@
+{
+  "niche": "Christian Faith, Theology, and Philosophy",
+  "persona": "Modern Theological Commentator",
+  "tone": "Intellectual yet accessible, provocative, deeply anchored in historical orthodoxy, conversational, and direct",
+  "target_platforms": ["tiktok", "instagram"],
+  "daily_post_frequency": 3,
+  "visual_style": {
+    "background": "Cinematic dark mode, minimalist architectural textures, or atmospheric moody lighting",
+    "typography": "Clean sans-serif kinetic text overlays with yellow highlights on key theological terms",
+    "audio_bed": "Lo-fi ambient pads or dramatic neoclassical instrumental undertones"
+  }
+}
