@@ -8,8 +8,6 @@ def generate_theological_script(trend_data, config):
         raise ValueError("GEMINI_API_KEY environment variable not set.")
         
     genai.configure(api_key=api_key)
-    
-    # Updated to the current available model
     model = genai.GenerativeModel("gemini-3.8-flash")
     
     prompt = f"""
@@ -18,13 +16,14 @@ def generate_theological_script(trend_data, config):
     Persona Tone: {config['tone']}
     
     Based on this trending angle: "{trend_data}", 
-    write a short-form video script structured strictly as follows:
-    1. Hook: First 3 seconds, deeply provocative or intellectually engaging question.
-    2. Body: Core theological/philosophical insight delivered sharply in under 40 words.
-    3. CTA: Engagement driver.
-    4. Caption: SEO-optimized caption with relevant Christian philosophy hashtags.
+    write a short-form video script and visual direction structured strictly as a JSON object:
+    1. "hook": First 3 seconds, deeply provocative question or paradox (max 18 words). Use "..." for dramatic pauses.
+    2. "body": Core theological/philosophical insight delivered sharply (30-40 words). Use "..." where the speaker should pause for weight.
+    3. "cta": Sharp debate question for the comments (max 15 words).
+    4. "caption": SEO-optimized caption with Christian philosophy hashtags.
+    5. "broll_prompts": A list of 2 cinematic, dark-academia, moody photorealistic image prompts (no text in image) that visually illustrate the "body" argument (e.g., "ancient marble statue of justice crumbling in dark cathedral, chiaroscuro lighting, 35mm film grain").
     
-    Return the output strictly as a valid JSON object with keys: "hook", "body", "cta", "caption". Do not include markdown code blocks like ```json in the output, just the raw JSON text.
+    Return ONLY raw valid JSON with keys: "hook", "body", "cta", "caption", "broll_prompts".
     """
     
     response = model.generate_content(prompt)
