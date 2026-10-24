@@ -22,8 +22,14 @@ async def _generate_tts(text, filename):
     await communicate.save(filename)
 
 def generate_voiceover(text, output_audio_path):
-    asyncio.run(_generate_tts(text, output_audio_path))
-
+    """Generates neural voiceover via edge-tts (v7.3+), with automatic fallback to Google TTS."""
+    try:
+        asyncio.run(_generate_tts(text, output_audio_path))
+    except Exception as e:
+        print(f"[TTS Warning] edge-tts encountered an issue ({e}). Switching to gTTS fallback...")
+        from gtts import gTTS
+        tts = gTTS(text=text, lang="en", tld="co.uk", slow=False)
+        tts.save(output_audio_path)
 def ensure_consistent_avatar():
     """Locks in your character portrait or generates a seed-locked face."""
     os.makedirs(AVATAR_DIR, exist_ok=True)
