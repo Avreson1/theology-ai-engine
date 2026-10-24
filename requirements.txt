@@ -2,7 +2,8 @@ requests==2.31.0
 google-generativeai==0.8.3
 python-dotenv==1.0.1
 moviepy==1.0.3
-edge-tts==6.1.12
+edge-tts>=7.3.0
+gTTS==2.5.3
 Pillow==9.5.0
 numpy==1.26.4
 gradio_client==1.3.0
