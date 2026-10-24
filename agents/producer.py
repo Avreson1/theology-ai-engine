@@ -27,7 +27,7 @@ AVATAR_IMG_PATH = os.path.join(AVATAR_DIR, "character.png")
 def try_gemini_expressive_tts(text, style_cue, output_wav_path):
     """
     Attempts to use Gemini 2.5 Flash Native TTS with natural language acting direction
-    for studio-grade vocal inflection (Charon/Fenrir deep philosophical voice).
+    for studio-grade vocal inflection (Charon deep philosophical voice).
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -43,7 +43,7 @@ def try_gemini_expressive_tts(text, style_cue, output_wav_path):
             "speechConfig": {
                 "voiceConfig": {
                     "prebuiltVoiceConfig": {
-                        "voiceName": "Charon" # Deep, resonant, thoughtful male voice
+                        "voiceName": "Charon"
                     }
                 }
             }
@@ -55,7 +55,6 @@ def try_gemini_expressive_tts(text, style_cue, output_wav_path):
             data = resp.json()
             inline_data = data["candidates"][0]["content"]["parts"][0]["inlineData"]
             pcm_bytes = base64.b64decode(inline_data["data"])
-            # Gemini returns 24kHz, 16-bit mono PCM
             with wave.open(output_wav_path, "wb") as wf:
                 wf.setnchannels(1)
                 wf.setsampwidth(2)
@@ -68,20 +67,18 @@ def try_gemini_expressive_tts(text, style_cue, output_wav_path):
     return False
 
 async def _generate_dynamic_edge_tts(text, section_type, filename):
-    # BrianMultilingualNeural & AndrewMultilingualNeural have the highest conversational realism
     voice = "en-US-BrianMultilingualNeural"
     if section_type == "Theological Hook":
-        rate, pitch = "+6%", "-3Hz"   # Urgent, arresting opening
+        rate, pitch = "+6%", "-3Hz"
     elif section_type == "Core Insight":
-        rate, pitch = "-2%", "-6Hz"   # Measured, weighty philosophical gravitas
+        rate, pitch = "-2%", "-6Hz"
     else:
-        rate, pitch = "+8%", "-2Hz"   # Direct, challenging call to action
+        rate, pitch = "+8%", "-2Hz"
 
     communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     await communicate.save(filename)
 
 def generate_voiceover(text, section_type, output_audio_path):
-    """Generates high-inflection voiceover with dramatic pacing."""
     style_map = {
         "Theological Hook": "Speak with arresting intensity, intriguing and provocative, pausing slightly at ellipses.",
         "Core Insight": "Speak with deep philosophical weight, warm resonance, and intellectual conviction.",
@@ -94,7 +91,6 @@ def generate_voiceover(text, section_type, output_audio_path):
         aclip.close()
         return
 
-    # Fallback 1: Multi-prosody Edge-TTS (with retry)
     for attempt in range(3):
         try:
             asyncio.run(_generate_dynamic_edge_tts(text, section_type, output_audio_path))
@@ -103,7 +99,6 @@ def generate_voiceover(text, section_type, output_audio_path):
         except Exception as e:
             print(f"[TTS Retry {attempt+1}/3] Edge-TTS error: {e}")
 
-    # Last-resort fallback
     from gtts import gTTS
     tts = gTTS(text=text, lang="en", tld="co.uk", slow=False)
     tts.save(output_audio_path)
@@ -112,20 +107,11 @@ def generate_voiceover(text, section_type, output_audio_path):
 # 2. PSYCHOACOUSTIC SOUND DESIGN ENGINE
 # ==========================================
 def generate_psychoacoustic_soundtrack(total_duration, transition_times, output_wav_path, sr=44100):
-    """
-    Synthesizes a psychologically compelling dark-ambient philosophical soundtrack:
-    - 55Hz (A1) + 82.5Hz (E2) warm harmonic sub-drone with slow binaural breath modulation
-    - Ethereal 220Hz/330Hz minor pad shimmer
-    - Deep 65Hz->28Hz cinematic sub-bass impact booms at every section transition
-    """
     print("[SoundEngine] Synthesizing dark-ambient psychoacoustic score & sub-bass impacts...")
     num_samples = int(total_duration * sr)
     t = np.linspace(0, total_duration, num_samples, endpoint=False)
 
-    # Slow breathing LFO (0.14 Hz = ~7 second psychological breath cycle)
     lfo = 0.65 + 0.35 * np.sin(2 * np.pi * 0.14 * t)
-
-    # Warm harmonic drone (A1 = 55Hz, E2 = 82.41Hz, A2 = 110Hz, C3 = 130.81Hz minor third)
     drone = (
         0.45 * np.sin(2 * np.pi * 55.0 * t) +
         0.30 * np.sin(2 * np.pi * 82.41 * t + 0.4) +
@@ -133,7 +119,6 @@ def generate_psychoacoustic_soundtrack(total_duration, transition_times, output_
         0.08 * np.sin(2 * np.pi * 130.81 * t) * (1.0 - lfo * 0.5)
     )
 
-    # Add cinematic sub-bass impact hits (80Hz -> 30Hz pitch drop) at hook & section transitions
     impacts = np.zeros_like(t)
     for trans_t in [0.0] + transition_times:
         mask = (t >= trans_t) & (t < trans_t + 1.4)
@@ -142,7 +127,6 @@ def generate_psychoacoustic_soundtrack(total_duration, transition_times, output_
         env = np.exp(-3.0 * local_t) * np.sin(np.pi * np.minimum(local_t / 0.04, 1.0))
         impacts[mask] += 0.85 * env * np.sin(2 * np.pi * freq_sweep * local_t)
 
-    # Combine and normalize to background bed level (-16dB under voice)
     mix = (drone * 0.11) + (impacts * 0.22)
     mix = np.clip(mix, -0.95, 0.95)
     pcm16 = (mix * 32767).astype(np.int16)
@@ -177,7 +161,6 @@ def ensure_consistent_avatar():
     return AVATAR_IMG_PATH
 
 def fetch_broll_images(broll_prompts):
-    """Downloads 2 moody, cinematic B-Roll images matching the script's philosophical theme."""
     broll_imgs = []
     if not broll_prompts:
         broll_prompts = [
@@ -204,7 +187,6 @@ def fetch_broll_images(broll_prompts):
 # 4. CLOUD GPU LIP-SYNC + AUDIO-REACTIVE JAW/LIP ANIMATOR
 # ==========================================
 def generate_cloud_lipsync(image_path, audio_path, output_raw_video):
-    """Discovers live running Hugging Face LipSync spaces and attempts cloud GPU render."""
     hf_token = os.getenv("HF_TOKEN")
     candidate_spaces = [
         "ByteDance/LatentSync",
@@ -218,9 +200,7 @@ def generate_cloud_lipsync(image_path, audio_path, output_raw_video):
             client = Client(space_id, hf_token=hf_token if hf_token else None)
             api_info = client.view_api(return_format="dict")
             endpoints = list(api_info.get("named_endpoints", {}).keys())
-            print(f"[LipSync] {space_id} online! Endpoints: {endpoints}")
-
-            # Try LatentSync / generic (image/video, audio) signature
+            
             result = client.predict(
                 handle_file(image_path),
                 handle_file(audio_path),
@@ -238,33 +218,22 @@ def generate_cloud_lipsync(image_path, audio_path, output_raw_video):
     return None
 
 def animate_avatar_with_audio_envelope(base_pil, t, speech_amp):
-    """
-    Animates the avatar portrait in real time synced to the exact syllable volume (speech_amp 0.0 -> 1.0):
-    1. Dynamic lower-face/jaw articulation + darkened inner mouth aperture synced to syllables.
-    2. Subtle conversational head nod & breathing sway tied to vocal emphasis.
-    3. Natural periodic eye blinks every ~3.8 seconds.
-    """
     arr = np.array(base_pil).copy()
     h, w, _ = arr.shape
 
-    # 1. Conversational head micro-motion (nods slightly on loud syllables + slow breathing sway)
     sway_x = int(6 * math.sin(t * 1.1))
     nod_y = int(4 * math.sin(t * 1.7) + (speech_amp * 7))
 
-    # 2. Audio-reactive jaw/mouth articulation
-    # Standard portrait proportions: mouth center is around Y = 0.60*h, X = 0.50*w
     if speech_amp > 0.08:
-        jaw_shift = int(speech_amp * 14) # Up to 14px jaw drop on strong vowels
+        jaw_shift = int(speech_amp * 14)
         y_mouth_top = int(h * 0.58)
         y_chin_bot = int(h * 0.78)
         x_jaw_left = int(w * 0.36)
         x_jaw_right = int(w * 0.64)
 
-        # Smoothly stretch lower face/jaw downward proportional to syllable volume
         src_slice = arr[y_mouth_top:y_chin_bot - jaw_shift, x_jaw_left:x_jaw_right].copy()
         arr[y_mouth_top + jaw_shift:y_chin_bot, x_jaw_left:x_jaw_right] = src_slice
 
-        # Render subtle dark oral aperture at the lip parting line
         lip_y = y_mouth_top + int(jaw_shift * 0.55)
         lip_half_w = int(w * (0.035 + 0.025 * speech_amp))
         lip_half_h = max(2, int(jaw_shift * 0.45))
@@ -272,7 +241,6 @@ def animate_avatar_with_audio_envelope(base_pil, t, speech_amp):
         x1, x2 = max(0, w // 2 - lip_half_w), min(w, w // 2 + lip_half_w)
         arr[y1:y2, x1:x2] = (arr[y1:y2, x1:x2] * 0.28).astype(np.uint8)
 
-    # 3. Periodic natural eye blink (every 3.8 seconds, blink lasts 0.14s)
     if (t % 3.8) < 0.14:
         eye_y1, eye_y2 = int(h * 0.39), int(h * 0.43)
         eyelid_slice = arr[eye_y1 - 8:eye_y1, int(w * 0.30):int(w * 0.70)]
@@ -282,7 +250,6 @@ def animate_avatar_with_audio_envelope(base_pil, t, speech_amp):
             arr[eye_y1:eye_y2, int(w * 0.55):int(w * 0.68)] = mean_skin
 
     img = Image.fromarray(arr)
-    # Apply subtle head nod/sway crop
     zoom = 1.05
     cw, ch = int(w / zoom), int(h / zoom)
     left = max(0, min(w - cw, (w - cw) // 2 + sway_x))
@@ -293,11 +260,6 @@ def animate_avatar_with_audio_envelope(base_pil, t, speech_amp):
 # 5. COMPOSITING ENGINE (Avatar + B-Roll Cutaways + PiP + Captions)
 # ==========================================
 def composite_vertical_frame(avatar_rgb, broll_pil, subtitle_text, section_label, t):
-    """
-    Dynamically switches between:
-    - Full-screen Talking Avatar (during Hook & CTA)
-    - Cinematic B-Roll with Picture-in-Picture (PiP) Talking Avatar in top-right corner (during Core Insight)
-    """
     w, h = 1080, 1920
     canvas = Image.new("RGB", (w, h), (10, 12, 18))
     avatar_pil = Image.fromarray(avatar_rgb).convert("RGB")
@@ -305,28 +267,23 @@ def composite_vertical_frame(avatar_rgb, broll_pil, subtitle_text, section_label
     use_broll_cutaway = (broll_pil is not None) and (section_label == "Core Insight")
 
     if use_broll_cutaway:
-        # Slow Ken-Burns pan/zoom on the B-Roll image
         bw, bh = broll_pil.size
         zoom = 1.04 + 0.06 * math.sin(t * 0.35)
         cw, ch = int(bw / zoom), int(bh / zoom)
         b_crop = broll_pil.crop(((bw - cw)//2, (bh - ch)//2, (bw + cw)//2, (bh + ch)//2)).resize((w, 1450), Image.BILINEAR)
-        # Slightly darken B-Roll so PiP and typography pop
         b_crop = ImageEnhance.Brightness(b_crop).enhance(0.78)
         canvas.paste(b_crop, (0, 0))
 
-        # Picture-in-Picture (PiP) circular talking avatar in top-right corner
         pip_size = 310
         pip_avatar = avatar_pil.resize((pip_size, pip_size), Image.BILINEAR)
         mask = Image.new("L", (pip_size, pip_size), 0)
         ImageDraw.Draw(mask).ellipse((0, 0, pip_size, pip_size), fill=255)
 
-        # Gold ring border around PiP avatar
         ring_draw = ImageDraw.Draw(canvas)
         pip_x, pip_y = w - pip_size - 65, 75
         ring_draw.ellipse((pip_x - 6, pip_y - 6, pip_x + pip_size + 6, pip_y + pip_size + 6), fill=(234, 179, 8))
         canvas.paste(pip_avatar, (pip_x, pip_y), mask)
     else:
-        # Full-screen Avatar layout
         aw, ah = avatar_pil.size
         target_h = 1450
         scale = max(w / aw, target_h / ah)
@@ -334,7 +291,6 @@ def composite_vertical_frame(avatar_rgb, broll_pil, subtitle_text, section_label
         av_res = avatar_pil.resize((nw, nh), Image.BILINEAR)
         canvas.paste(av_res.crop(((nw - w)//2, (nh - target_h)//2, (nw + w)//2, (nh + target_h)//2)), (0, 0))
 
-    # Gradient vignette into lower third
     canvas_rgba = canvas.convert("RGBA")
     overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     draw_ov = ImageDraw.Draw(overlay)
@@ -354,11 +310,9 @@ def composite_vertical_frame(avatar_rgb, broll_pil, subtitle_text, section_label
     except IOError:
         sub_font = badge_font = handle_font = ImageFont.load_default()
 
-    # Section Badge
     draw.rounded_rectangle([80, 85, 490, 145], radius=14, fill=(234, 179, 8))
     draw.text((105, 99), section_label.upper(), font=badge_font, fill=(12, 14, 20))
 
-    # Subtitles in Lower Third
     words = subtitle_text.upper().split()
     lines, cur = [], []
     for word in words:
@@ -399,7 +353,6 @@ def render_video_asset(script_payload, config):
     avatar_path = ensure_consistent_avatar()
     base_avatar_pil = Image.open(avatar_path).convert("RGB").resize((1024, 1024))
 
-    # Fetch 2 thematic B-Roll images
     broll_images = fetch_broll_images(script_payload.get("broll_prompts", []))
 
     sections = [
@@ -436,16 +389,23 @@ def render_video_asset(script_payload, config):
         current_t += aclip.duration
 
     full_voice = concatenate_audioclips(audio_clips)
-    full_voice.write_audiofile(combined_voice_path, fps=44100, logger=None)
+    combined_voice_wav = "assets/output/full_voiceover.wav"
+    full_voice.write_audiofile(combined_voice_wav, fps=22050, nbytes=2, codec="pcm_s16le", logger=None)
     total_duration = full_voice.duration
 
-    # Pre-compute 24fps speech amplitude envelope so local jaw/lip animation matches exact syllables
-    audio_array = full_voice.to_soundarray(fps=22050)
-    if audio_array.ndim > 1:
-        audio_mono = np.mean(audio_array, axis=1)
+    with wave.open(combined_voice_wav, "rb") as wf:
+        n_channels = wf.getnchannels()
+        raw_pcm = wf.readframes(wf.getnframes())
+    
+    audio_samples = np.frombuffer(raw_pcm, dtype=np.int16).astype(np.float32)
+    if n_channels > 1:
+        audio_mono = np.mean(audio_samples.reshape(-1, n_channels), axis=1)
     else:
-        audio_mono = audio_array
-    max_val = np.max(np.abs(audio_mono)) or 1.0
+        audio_mono = audio_samples
+
+    max_val = float(np.max(np.abs(audio_mono))) if audio_mono.size > 0 else 1.0
+    if max_val == 0:
+        max_val = 1.0
     audio_mono = np.abs(audio_mono) / max_val
 
     def get_speech_amplitude(t):
@@ -455,13 +415,11 @@ def render_video_asset(script_payload, config):
             return 0.0
         return min(1.0, float(np.sqrt(np.mean(window ** 2))) * 2.6)
 
-    # Synthesize psychoacoustic dark-ambient drone + sub-bass transitions & mix with voiceover
     generate_psychoacoustic_soundtrack(total_duration, transition_times, soundtrack_path)
     bg_music_clip = AudioFileClip(soundtrack_path)
     mixed_audio = CompositeAudioClip([full_voice, bg_music_clip])
 
-    # Attempt Cloud GPU LipSync first; if unavailable, use real-time audio-envelope jaw/blink animator
-    lipsync_video_path = generate_cloud_lipsync(avatar_path, combined_voice_path, raw_lipsync_path)
+    lipsync_video_path = generate_cloud_lipsync(avatar_path, combined_voice_wav, raw_lipsync_path)
     raw_video_clip = VideoFileClip(lipsync_video_path) if (lipsync_video_path and os.path.exists(lipsync_video_path)) else None
 
     def make_frame(t):
@@ -482,7 +440,6 @@ def render_video_asset(script_payload, config):
             amp = get_speech_amplitude(t)
             avatar_frame = animate_avatar_with_audio_envelope(base_avatar_pil, t, amp)
 
-        # Select which B-Roll image to show during "Core Insight"
         active_broll = None
         if broll_images and active_label == "Core Insight":
             active_broll = broll_images[chunk_idx % len(broll_images)]
