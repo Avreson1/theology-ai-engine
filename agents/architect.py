@@ -8,7 +8,9 @@ def generate_theological_script(trend_data, config):
         raise ValueError("GEMINI_API_KEY environment variable not set.")
         
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.5-flash")
+    
+    # Updated to the current available model
+    model = genai.GenerativeModel("gemini-3.8-flash")
     
     prompt = f"""
     You are a Modern Theological Commentator on TikTok and Instagram.
